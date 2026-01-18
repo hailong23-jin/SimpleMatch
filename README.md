@@ -21,21 +21,7 @@ This is the official code for SimpleMatch implemented with PyTorch.
 2) ibot: [Download](https://lf3-nlp-opensource.bytetos.com/obj/nlp-opensource/archive/2022/ibot/vitb_16/checkpoint_teacher.pth)
 3) resnet101: [Download](https://download.pytorch.org/models/resnet101-5d3b4d8f.pth)
 
-Modify the checkpoint path in the config file:
-
-```
-model = dict(
-    type='CorrespondenceModelResNet',
-    pair_image_encoder_cfg=dict(
-        type='PairImageEncoderResNet',
-        backbone_cfg=dict(
-            type='ResNet',
-            layers=[3, 4, 23, 3],
-            checkpoint_path='/home/jinhl/.cache/torch/hub/checkpoints/resnet101-5d3b4d8f.pth'
-        ),
-    ),
-)
-```
+`mkdir checkpoints` and put them in checkpoints directory.
 
 
 ### Environment Settings
@@ -48,7 +34,7 @@ pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --e
 pip install -r requirements.txt
 ```
 
-### Download Pretrained checkpoints 
+### Download Pretrained weights 
 
 [Google Drive](https://drive.google.com/drive/folders/1lhEEpqEVYGIdXLwmmmtUYR0G1fU72BUi?usp=sharing)
 

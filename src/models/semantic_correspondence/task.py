@@ -32,43 +32,22 @@ class SparseCorrespondenceTask:
 
         return grid_x, grid_y
 
-    def compute_trg_kps(self, corr, src_kps, n_pts, window_size):
+    def compute_trg_kps(self, corr, window_size):
         # corr: B x 40 x N  src x trg
         b, _, N = corr.size()
         h = w = int(math.sqrt(N))
         H = W = self.img_size
         down_factor = H/h
 
-        # arr = []
-        # for M, src_kp, num in zip(corr, src_kps, n_pts):
-        #     src_kp = (src_kp[:, :num] / down_factor).long()
-        #     src_kp_index = src_kp[0, :] + src_kp[1, :] * w
-        #     M = M[src_kp_index]
-        #     M = torch.cat([M, torch.zeros(size=[30-num, N]).cuda()], dim=0)
-        #     arr.append(M)
-        # corr = torch.stack(arr)
-        # window_size = h
-
         if window_size is None or h < window_size:
             window_size = h
         corr, top_left_coords = get_kxk_window_optimized(corr.view(b, -1, h, w), k=window_size) 
 
         grid_x, grid_y = self.soft_argmax(corr.view(b, -1, window_size, window_size))
-        # grid_x, grid_y = self.soft_argmax(corr.view(b, -1, h, w))
         pred_xy = torch.stack([grid_x, grid_y], dim=1)  #  B x 2 x 40
         pred_xy[:, 0] = (pred_xy[:, 0].float().clone() + 1) * (window_size - 1) / 2.0 
         pred_xy[:, 1] = (pred_xy[:, 1].float().clone() + 1) * (window_size - 1) / 2.0
         pred_xy = pred_xy + top_left_coords.transpose(-2, -1)
-
-        # arr = []
-        # for xy, src_kp, num in zip(pred_xy, src_kps, n_pts):
-        #     src_kp = (src_kp[:, :num] / down_factor).long()
-        #     src_kp_index = src_kp[0, :] + src_kp[1, :] * w
-            
-        #     xy = xy[:, src_kp_index]
-        #     xy = torch.cat([xy, torch.zeros(size=[2, 30-num]).cuda()], dim=1)
-        #     arr.append(xy)
-        # pred_xy = torch.stack(arr)
 
         return pred_xy * down_factor
 

@@ -115,7 +115,7 @@ class CorrespondenceModel(nn.Module):
     def forward_step(self, batch):
         outs = self.forward(batch['src_img'], batch['trg_img'], batch['src_kps'], batch['n_pts'])
 
-        pred_trg_kps = self.task.compute_trg_kps(outs['corr'], batch['src_kps'], batch['n_pts'], window_size=self.window_size)
+        pred_trg_kps = self.task.compute_trg_kps(outs['corr'], window_size=self.window_size)
         loss = self.task.compute_loss(pred_trg_kps, batch['trg_kps'], batch['n_pts'])
 
         return OrderedDict(

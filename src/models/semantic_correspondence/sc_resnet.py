@@ -109,9 +109,9 @@ class CorrespondenceModelResNet(nn.Module):
     def forward_step(self, batch):
         outs = self.forward(batch['src_img'], batch['trg_img'], batch['src_kps'], batch['n_pts'])
 
-        pred_trg_kps1 = self.task.compute_trg_kps(outs['corr1'], batch['src_kps'], batch['n_pts'], window_size=None)
-        pred_trg_kps2 = self.task.compute_trg_kps(outs['corr2'], batch['src_kps'], batch['n_pts'], window_size=15)
-        pred_trg_kps3 = self.task.compute_trg_kps(outs['corr3'], batch['src_kps'], batch['n_pts'], window_size=30)
+        pred_trg_kps1 = self.task.compute_trg_kps(outs['corr1'], window_size=None)
+        pred_trg_kps2 = self.task.compute_trg_kps(outs['corr2'], window_size=15)
+        pred_trg_kps3 = self.task.compute_trg_kps(outs['corr3'], window_size=30)
 
         loss1 = self.task.compute_loss(pred_trg_kps1, batch['trg_kps'], batch['n_pts'])
         loss2 = self.task.compute_loss(pred_trg_kps2, batch['trg_kps'], batch['n_pts'])

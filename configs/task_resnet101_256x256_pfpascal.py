@@ -20,7 +20,7 @@ model = dict(
         backbone_cfg=dict(
             type='ResNet',
             layers=[3, 4, 23, 3],
-            checkpoint_path='/home/jinhl/.cache/torch/hub/checkpoints/resnet101-5d3b4d8f.pth'
+            checkpoint_path='checkpoints/resnet101-5d3b4d8f.pth'
         ),
     ),
     task_cfg=dict(

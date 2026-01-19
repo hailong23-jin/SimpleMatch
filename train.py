@@ -1,6 +1,4 @@
-
 import os
-import sys
 import argparse
 import os.path as osp
 
@@ -11,8 +9,8 @@ from src.utils import save_code
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a semantic correspondence model')
-    parser.add_argument('--config', default='configs/task_dinov2-b14_448x448_spair.py', help='train config file path')
-    parser.add_argument('--work-dir', help='the dir to save logs and models', default='work_dirs/tmp')
+    parser.add_argument('--config',  help='train config file path')
+    parser.add_argument('--work-dir', help='the directory to save logs and models')
     parser.add_argument(
         '--cfg-options',
         nargs='+',

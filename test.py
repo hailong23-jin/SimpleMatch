@@ -7,12 +7,9 @@ from src.runner import Runner
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a segmentor')
-    parser.add_argument('--config', default='configs/task_ibot-b16_256x256_spair.py', help='train config file path')
-    parser.add_argument(
-        '--model_path',
-        default='work_dirs/ibot_256x256_spair_window_45_resolution_1_16/best_model.pth',
-        help='Path to the model checkpoint.')
-    parser.add_argument('--work-dir', help='the dir to save logs and models')
+    parser.add_argument('--config', help='config file path')
+    parser.add_argument('--model_path', help='Path to the model checkpoint.')
+    parser.add_argument('--work-dir', help='the directory to save logs and models')
     parser.add_argument(
         '--cfg-options',
         nargs='+',

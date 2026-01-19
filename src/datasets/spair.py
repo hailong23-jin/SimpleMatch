@@ -1,37 +1,14 @@
 r"""SPair-71k dataset"""
-import os
 import json
 import copy
-import random
-import itertools
 import numpy as np
 import os.path as osp
-from PIL import Image
 
-import torch
 from torch.utils.data import Dataset
-from tqdm import tqdm
 
 from mmengine import DATASETS
 from mmengine.dataset import Compose
 
-def deal_kps(kps):
-    out_kps = []
-    out_ids = []
-    for kp_id, xy in kps.items():
-        if xy is not None:
-            out_kps.append(xy)
-            out_ids.append(int(kp_id))
-    return np.array(out_kps), np.array(out_ids)
-
-def read_all_kps(ann_file):
-    data = json.load(open(ann_file))
-    out_kps = []
-    for kp_id, xy in data['kps'].items():
-        if xy is not None:
-            out_kps.append(xy)
-
-    return np.array(out_kps).T
 
 def read_from_json(ann_file):
     data = json.load(open(ann_file))
@@ -43,15 +20,6 @@ def read_from_json(ann_file):
     kps_ids = np.array(data['kps_ids']).astype(int)
     return src_kps, trg_kps, n_pts, src_bbox, trg_bbox, kps_ids
 
-
-def read_file():
-    path = '/home/jinhl/PythonWorkspace/ours/SimpleMatch/b.txt'
-    arr = []
-    with open(path, 'r') as f:
-        for line in f.readlines():
-            line = line.strip('\n')
-            arr.append(line)
-    return arr
 
 @DATASETS.register_module()
 class SPairDataset(Dataset):
@@ -104,19 +72,7 @@ class SPairDataset(Dataset):
                 'kps_ids': kps_ids,
             }
             data_list.append(sample)
-            # if category == 'person':
-            #     data_list.append(sample)
-            # if self.split == 'test' and f'{src_name}-{trg_name}' in names:
-            #     data_list.append(sample)
-            
-            # if self.split != 'test':
-            #     data_list.append(sample)
-                
-            # all_src_kps = read_all_kps(osp.join(self.img_ann_dir, category, src_name + '.json'))
-            # sample['all_src_kps'] = all_src_kps
-            # sample['all_n_pts'] = all_src_kps.shape[-1]
 
-        # random.shuffle(data_list)
         return data_list, data_dict
 
     def __len__(self):

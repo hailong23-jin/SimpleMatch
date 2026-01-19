@@ -1,9 +1,9 @@
+r"""PF-WILLOW dataset"""
 import copy
 import numpy as np
 import pandas as pd
 import os.path as osp
 
-import torch
 from torch.utils.data import Dataset
 
 from mmengine.registry import DATASETS
@@ -40,24 +40,14 @@ class PFWillowDataset(Dataset):
             src_kps = row[2:22].values.reshape(2, 10).astype(np.float32)
             trg_kps = row[22:].values.reshape(2, 10).astype(np.float32)
 
-            # sample = {
-            #     'category': category,
-            #     'category_id': category_id,
-            #     'src_img_path': osp.join(self.img_dir, category, src_imname + '.png'),
-            #     'trg_img_path': osp.join(self.img_dir, category, trg_imname + '.png'),
-            #     'pair_name': f'{src_imname}-{trg_imname}:{category}',
-            #     'src_kps': src_kps,
-            #     'trg_kps': trg_kps,
-            #     'n_pts': 10,
-            # }
             sample = {
                 'category': category,
                 'category_id': category_id,
-                'trg_img_path': osp.join(self.img_dir, category, src_imname + '.png'),
-                'src_img_path': osp.join(self.img_dir, category, trg_imname + '.png'),
+                'src_img_path': osp.join(self.img_dir, category, src_imname + '.png'),
+                'trg_img_path': osp.join(self.img_dir, category, trg_imname + '.png'),
                 'pair_name': f'{src_imname}-{trg_imname}:{category}',
-                'trg_kps': src_kps,
-                'src_kps': trg_kps,
+                'src_kps': src_kps,
+                'trg_kps': trg_kps,
                 'n_pts': 10,
             }
             data_list.append(sample)

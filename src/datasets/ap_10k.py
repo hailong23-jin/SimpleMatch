@@ -1,11 +1,8 @@
-r"""SPair-71k dataset"""
+r"""AP10k dataset"""
 import json
 import os
 import os.path as osp
-from PIL import Image
 import torch
-import torchvision.transforms.functional as F
-import random
 import copy
 from glob import glob
 import numpy as np
@@ -17,9 +14,7 @@ from mmengine.dataset import Compose
 
 @DATASETS.register_module()
 class AP10kDataset(torch.nn.Module):
-    r"""Inherits CorrespondenceDataset"""
     def __init__(self, data_root, eval_type, split, pipeline, demo_sample=-1):
-        r"""SPair-71k dataset constructor"""
         super().__init__()
         self.demo_sample = demo_sample
         dataset_dir = osp.join(data_root, 'ap-10k')
@@ -36,7 +31,6 @@ class AP10kDataset(torch.nn.Module):
     def get_categories(self, eval_type, split):
         categories = []
         subfolders = os.listdir(self.img_ann_dir)
-        # Handle AP10K_EVAL test settings
         if eval_type == 'intra-species':
             categories = [folder for subfolder in subfolders for folder in os.listdir(os.path.join(self.img_ann_dir, subfolder))]
         elif eval_type == 'cross-species':
@@ -54,7 +48,6 @@ class AP10kDataset(torch.nn.Module):
         for category in categories:
             pairs += sorted(glob(f'{self.pair_ann_dir}/{split}/*:{category}.json'))
         data_list = []
-        data_dict = dict()
         for pair in tqdm(pairs, ncols=80):
             with open(pair) as f:
                 data = json.load(f)
@@ -91,10 +84,6 @@ class AP10kDataset(torch.nn.Module):
                     'trg_bbox': target_bbox,
                 }
             
-            # if category not in data_dict:
-            #     data_dict[category] = [sample]
-            # else:
-            #     data_dict[category] += [sample]
             data_list.append(sample)
 
         return data_list
@@ -104,11 +93,11 @@ class AP10kDataset(torch.nn.Module):
             return self.demo_sample
         else:
             return len(self.data_list)
-        # return 128
 
 
     def __getitem__(self, idx):  #
         batch = copy.deepcopy(self.data_list[idx])
+        
         batch = self.pipeline(batch)
 
         batch['pckthres'] = max(batch['trg_bbox'][3], batch['trg_bbox'][2])

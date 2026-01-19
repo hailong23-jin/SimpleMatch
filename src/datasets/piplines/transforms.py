@@ -21,7 +21,6 @@ class Resize:
 
     def resize_kps(self, kps, img_size):
         '''
-        imside: 448
         img_size: h x w
         '''
         kps[0, :] = kps[0, :] * (self.size[1] / img_size[1])
@@ -104,7 +103,7 @@ class RandomRotation:
         center = ((image.shape[1] - 1) / 2, (image.shape[0] - 1) / 2)
 
         rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-        # 计算旋转后的图像宽度和高度
+ 
         cos = np.abs(rotation_matrix[0, 0])
         sin = np.abs(rotation_matrix[0, 1])
 
@@ -112,13 +111,10 @@ class RandomRotation:
         new_width = int(scale * (image.shape[1] * cos + image.shape[0] * sin))
         new_height = int(scale * (image.shape[1] * sin + image.shape[0] * cos))
 
-        # 调整旋转矩阵以确保中心点位于输出图像中心
         rotation_matrix[0, 2] += ((new_width - 1) / 2) - center[0]
         rotation_matrix[1, 2] += ((new_height - 1) / 2) - center[1]
 
-        # mask = np.ones_like(image).astype(np.uint8)
         rotated_image = cv2.warpAffine(image, rotation_matrix, (new_width, new_height))
-        # rotated_mask = cv2.warpAffine(mask, rotation_matrix, (new_width, new_height))
 
         rotated_key_points = key_points.copy()
         rotated_key_points[0, :] = key_points[0, :] * rotation_matrix[0, 0] + key_points[1, :] * rotation_matrix[0, 1] + rotation_matrix[0, 2]
@@ -129,7 +125,6 @@ class RandomRotation:
     def resize(self, img, kps):
         h, w, _ = img.shape
         img = cv2.resize(img, dsize=(self.target_size, self.target_size))
-        # mask = cv2.resize(mask, dsize=(self.target_size, self.target_size))
         kps[0, :] = kps[0, :] * (self.target_size / w)
         kps[1, :] = kps[1, :] * (self.target_size / h)
         return img, kps
@@ -149,9 +144,6 @@ class RandomRotation:
 
         batch['src_img'], batch['src_kps'] = self.resize(batch['src_img'], batch['src_kps'])
         batch['trg_img'], batch['trg_kps'] = self.resize(batch['trg_img'], batch['trg_kps'])
-
-        # visualize_img_with_kp(batch['src_img'], batch['src_kps'].T.astype(int), f"visual_results/tmp/{os.path.basename(batch['src_img_path'])[:-4]}_src.png")
-        # visualize_img_with_kp(batch['trg_img'], batch['trg_kps'].T.astype(int), f"visual_results/tmp/{os.path.basename(batch['src_img_path'])[:-4]}_trg.png")
         return batch
         
 @TRANSFORMS.register_module()
@@ -190,21 +182,9 @@ class PadKeyPoints:
         kps_ids = np.concatenate([kps_ids, pad_vals], axis=0)
         return kps_ids
 
-    def pad_weights(self, weights):
-        pad_num = self.max_num - weights.shape[0]
-        pad_vals = np.ones(pad_num, dtype=int) * -1
-        weights = np.concatenate([weights, pad_vals], axis=0)
-        return weights
-
     def __call__(self, batch):
         batch['src_kps'] = self.pad_kps(batch['src_kps'])
-        if 'trg_kps' in batch:
-            batch['trg_kps'] = self.pad_kps(batch['trg_kps'])
-        if 'all_src_kps' in batch:
-            batch['all_src_kps'] = self.pad_kps(batch['all_src_kps'])
-        
-        if 'kps_weights' in batch:
-            batch['kps_weights'] = self.pad_weights(batch['kps_weights'])
+        batch['trg_kps'] = self.pad_kps(batch['trg_kps'])
         if 'kps_ids' in batch:
             batch['kps_ids'] = self.pad_kps_ids(batch['kps_ids'])
         return batch
@@ -217,8 +197,8 @@ class ToTensor:
 
     def __call__(self, batch):
         batch['src_img'] = torch.from_numpy(batch['src_img'].copy()).float()
-        batch['src_kps'] = torch.from_numpy(batch['src_kps'].copy()).float()
         batch['trg_img'] = torch.from_numpy(batch['trg_img'].copy()).float()
+        batch['src_kps'] = torch.from_numpy(batch['src_kps'].copy()).float()
         batch['trg_kps'] = torch.from_numpy(batch['trg_kps'].copy()).float()
         
         if 'kps_ids' in batch:
@@ -231,9 +211,7 @@ class ToTensor:
             batch['category_id'] = torch.tensor(batch['category_id']).long()
         if 'pckthres' in batch:
             batch['pckthres'] = torch.tensor(batch['pckthres']).float()
-        if 'all_src_kps' in batch:
-            batch['all_src_kps'] = torch.from_numpy(batch['all_src_kps'].copy()).float()
-
+        
         return batch
 
 
@@ -271,8 +249,6 @@ class ResizeTransform:
         batch['trg_img'] = self.resize(batch['trg_img'])
         batch['src_kps'] = resize_kps(batch['src_kps'], self.target_size, batch['src_imsize'])
         batch['trg_kps'] = resize_kps(batch['trg_kps'], self.target_size, batch['trg_imsize'])
-        if 'all_src_kps' in batch:
-            batch['all_src_kps'] = resize_kps(batch['all_src_kps'], self.target_size, batch['src_imsize'])
 
         if 'trg_bbox' in batch:  # PF-WILLOW dataset has no trg_bbox
             h, w = batch['trg_imsize']
@@ -308,46 +284,6 @@ class ImageThreshold:
 class WILLOWThreshold:        
     def __call__(self, batch):
         batch['pckthres'] = max(batch['trg_kps'].max(1) - batch['trg_kps'].min(1))  # kps
-        return batch
-
-@TRANSFORMS.register_module()
-class PFPASCALFlip:
-    
-    def flip(self, batch):
-        tmp = batch['src_bbox'][0].copy()
-        width = batch['src_img'].shape[1]
-        batch['src_bbox'][0] = width - 1 - batch['src_bbox'][2]
-        batch['src_bbox'][2] = width - 1 - tmp
-
-        tmp = batch['trg_bbox'][0].copy()
-        width = batch['trg_img'].shape[1]
-        batch['trg_bbox'][0] = width - 1 - batch['trg_bbox'][2]
-        batch['trg_bbox'][2] = width - 1 - tmp
-
-        batch['src_kps'][0][:batch['n_pts']] = width - 1 - batch['src_kps'][0][:batch['n_pts']]
-        batch['trg_kps'][0][:batch['n_pts']] = width - 1 - batch['trg_kps'][0][:batch['n_pts']]
-
-        batch['src_img'] = np.flip(batch['src_img'], axis=1)
-        batch['trg_img'] = np.flip(batch['trg_img'], axis=1)
-        return batch
-    
-    def exchange(self, a, b):
-        tmp = a 
-        a = b
-        b = tmp
-        return a, b
-
-    def __call__(self, batch):
-        # if batch['is_flip']:
-        #     self.flip(batch)
-
-        if random.uniform(0, 1) < 0.5:
-            batch['src_img'], batch['trg_img'] = self.exchange(batch['src_img'], batch['trg_img'])
-            batch['src_kps'], batch['trg_kps'] = self.exchange(batch['src_kps'], batch['trg_kps'])
-            batch['src_bbox'], batch['trg_bbox'] = self.exchange(batch['src_bbox'], batch['trg_bbox'])
-
-        # visualize_img_with_kp(batch['src_img'].copy(), batch['src_kps'].T.astype(int), f"visual_results/tmp/{os.path.basename(batch['src_img_path'])[:-4]}_src.png")
-        # visualize_img_with_kp(batch['trg_img'].copy(), batch['trg_kps'].T.astype(int), f"visual_results/tmp/{os.path.basename(batch['trg_img_path'])[:-4]}_trg.png")
         return batch
 
 

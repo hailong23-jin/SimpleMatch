@@ -11,7 +11,6 @@ class KxKWindowOptimizedFunction(Function):
         
         max_indices = torch.argmax(relation_matrix_flat, dim=-1)
         
-        # 调用优化后的CUDA实现
         windows, top_left_coords = kxk_window_cuda_optimized.extract_kxk_window_optimized(
             relation_matrix_flat, max_indices, k)
         
@@ -25,7 +24,6 @@ class KxKWindowOptimizedFunction(Function):
         relation_matrix, top_left_coords = ctx.saved_tensors
         B, N, h, w, k = ctx.B, ctx.N, ctx.h, ctx.w, ctx.k
         
-        # 调用优化后的CUDA反向传播
         grad_input = kxk_window_cuda_optimized.kxk_window_backward(
             grad_windows.contiguous(),
             top_left_coords,
@@ -34,15 +32,4 @@ class KxKWindowOptimizedFunction(Function):
         return grad_input.reshape(B, N, h, w), None
 
 def get_kxk_window_optimized(relation_matrix, k):
-    """
-    全面优化的kxk窗口提取
-    
-    参数:
-        relation_matrix: (B, N, h, w) 输入关系矩阵
-        k: 窗口大小
-        
-    返回:
-        windows: (B, N, k, k) 提取的窗口
-        top_left_coords: (B, N, 2) 每个窗口的左上角坐标(x,y)
-    """
     return KxKWindowOptimizedFunction.apply(relation_matrix, k)
